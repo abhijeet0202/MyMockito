@@ -7,14 +7,13 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
-class TestBasics {
+class TestMapsBasics implements BasicQuery{
 	private static Session session = null;
 	private static final String KEYSPACE_NAME = "basic";
 	private static final String TABLE_NAME = "myMaps";
-	private static PlayWithMaps myObject = null;
+	private static BasicQuery myObject = null;
 
 	@DataProvider(name = "insertEntry")
 	public Object[][] provideInsertEntryInMap() {
@@ -74,20 +73,7 @@ class TestBasics {
 				{ "'21786'", "{'movie', 'band'}" } };
 	}
 	
-	private void printStatement(Session session, String keySpaceName, String tableName, String id) {
-		ResultSet result = null;
-		if (id ==null) {
-			result = session.execute("SELECT * FROM "+keySpaceName+"."+tableName);
-		}else {
-			System.out.println("SELECT * FROM "+keySpaceName+"."+tableName+ " WHERE id = "+id);
-			result = session.execute("SELECT * FROM "+keySpaceName+"."+tableName+ " WHERE id = "+id);
-		}
-		while (!result.isExhausted()) {
-			Row row = result.one();
-			System.out.println("OutPut:"+row);
-		}
-		
-	}
+	
 
 	@BeforeClass
 	static void setUpBeforeClass() throws Exception {
@@ -99,7 +85,7 @@ class TestBasics {
 	@AfterClass
 	static void tearDownAfterClass() throws Exception {
 		System.out.println("Destroying Connection");
-		session.execute("DROP KEYSPACE "+ KEYSPACE_NAME);
+		session.execute("DROP TABLE " + KEYSPACE_NAME+"."+ TABLE_NAME);
 		CassandraConnection.DestroyMe();
 	}
 
@@ -185,6 +171,19 @@ class TestBasics {
 		ResultSet result = myObject.executeQuery(session, sqlQuery.toString());
 		AssertJUnit.assertNotNull(result);
 		printStatement(session, KEYSPACE_NAME, TABLE_NAME, id);
+	}
+	
+	/*
+	 * Time To Live Demo :TTL
+	 */
+	@Test(dependsOnMethods = "insertEntry", dataProvider = "updateNewEntryCase1")
+	void ttlNewlyAddedElement(String id, String mapData) {
+		StringBuilder sqlQuery = new StringBuilder("UPDATE ").append(KEYSPACE_NAME).append(".").append(TABLE_NAME).append(" USING TTL 60")
+				.append(" SET favs").append(mapData).append(" WHERE id = ").append(id).append(";");
+
+		ResultSet result = myObject.executeQuery(session, sqlQuery.toString());
+		AssertJUnit.assertNotNull(result);
+		printStatement(session, KEYSPACE_NAME, TABLE_NAME,id);
 	}
 
 }
