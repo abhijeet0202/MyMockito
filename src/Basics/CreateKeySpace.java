@@ -3,9 +3,6 @@
  */
 package Basics;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
 /**
@@ -17,26 +14,15 @@ public class CreateKeySpace {
 	/**
 	 * 
 	 */
-	public CreateKeySpace() {
-		Cluster cluster = null;
-		try {
-			cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-			Session session = cluster.connect(); // (2)
-			
-			session.execute("CREATE KEYSPACE Basic WITH replication "
-		            + "= {'class':'SimpleStrategy', 'replication_factor':1};");
-			
-			ResultSet rs = session.execute("select release_version from system.local"); // (3)
-			Row row = rs.one();
-			System.out.println(row.getString("release_version")); // (4)
-		} finally {
-			if (cluster != null)
-				cluster.close(); // (5)
-		}
+	public CreateKeySpace(Session session, String keySpace) {
+		//session = CassandraConnection.ConnectMe();
 
-	}
-	public static void main(String[] args) {
-		new CreateKeySpace();
+		StringBuilder sb = new StringBuilder("CREATE KEYSPACE IF NOT EXISTS ").append(keySpace)
+				.append(" WITH replication = {").append("'class':").append("'SimpleStrategy'")
+				.append(",'replication_factor':").append("1").append("};");
+
+		System.out.println(sb.toString());
+		session.execute(sb.toString());
 	}
 
 }
