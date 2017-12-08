@@ -49,6 +49,15 @@ class TestSetsBasic implements BasicQuery {
 				{ "'21786'", "{ 'movie' , 'Dhoom 3', 'Travel' , 'Ooty' }" } };
 	}
 
+	@DataProvider(name = "insertEntryTTL")
+	public Object[][] provideInsertEntryTTL() {
+		return new Object[][] { { "'abhibane'", "{ 'U' , 'V', 'W' , 'X' }" },
+				{ "'ezbanab'","{ 'A' , 'B', 'C' , 'D' }" },
+				{ "'HR26BZ2435'", "{ 'E' , 'F', 'G' , 'H' }" },
+				{ "'aryan'", "{ 'I' , 'J', 'K' , 'L' }" },
+				{ "'Abhi'", "{ 'M' , 'N', 'O' , 'P' }" },
+				{ "'21786'", "{ 'Q' , 'R', 'S' , 'T'}" } };
+	}
 	/**
 	 * @throws java.lang.Exception
 	 */
@@ -65,7 +74,7 @@ class TestSetsBasic implements BasicQuery {
 	@AfterClass
 	static void tearDownAfterClass() throws Exception {
 		System.out.println("Destroying Connection");
-		session.execute("DROP TABLE " + KEYSPACE_NAME+"."+TABLE_NAME);
+		//session.execute("DROP TABLE " + KEYSPACE_NAME+"."+TABLE_NAME);
 		CassandraConnection.DestroyMe();
 	}
 
@@ -114,6 +123,19 @@ class TestSetsBasic implements BasicQuery {
 	void deleteElements(String id, String setData) {
 		StringBuilder sqlQuery = new StringBuilder("UPDATE ").append(KEYSPACE_NAME).append(".").append(TABLE_NAME)
 				.append(" SET favs = favs -").append(setData).append(" WHERE id = ").append(id).append(";");
+
+		ResultSet result = myObject.executeQuery(session, sqlQuery.toString());
+		AssertJUnit.assertNotNull(result);
+		printStatement(session, KEYSPACE_NAME, TABLE_NAME,id);
+	}
+	
+	/*
+	 * Time To Live Demo :TTL
+	 */
+	@Test(dependsOnMethods = "insertEntry", dataProvider = "insertEntryTTL")
+	void ttlNewlyAddedElement(String id, String setData) {
+		StringBuilder sqlQuery = new StringBuilder("UPDATE ").append(KEYSPACE_NAME).append(".").append(TABLE_NAME).append(" USING TTL 60")
+				.append(" SET favs = favs +").append(setData).append(" WHERE id = ").append(id).append(";");
 
 		ResultSet result = myObject.executeQuery(session, sqlQuery.toString());
 		AssertJUnit.assertNotNull(result);
